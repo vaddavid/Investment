@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Befektetés">
+  <meta name="theme-color" content="#0f1629">
+  <meta name="description" content="VUAA & CNDX befektetés nyilvántartó alkalmazás">
+  <title>Befektetés Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <h1>Befektetés Tracker</h1>
+    <div class="subtitle">VUAA · CNDX</div>
+  </header>
+
+  <!-- ===== DASHBOARD VIEW ===== -->
+  <main id="view-dashboard" class="view active">
+    <div class="card" id="total-card">
+      <div class="card-title">Összes befektetés</div>
+      <div class="card-value green" id="dash-total-eur">0,00 €</div>
+      <div class="card-sub" id="dash-total-huf">0 Ft</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">Aktuális hónap</div>
+        <div class="stat-value green" id="dash-month-eur">0 €</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Átlag árfolyam</div>
+        <div class="stat-value" id="dash-avg-rate" style="color: var(--accent-orange)">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">VUAA összesen</div>
+        <div class="stat-value green" id="dash-vuaa">0 €</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">CNDX összesen</div>
+        <div class="stat-value blue" id="dash-cndx">0 €</div>
+      </div>
+    </div>
+
+    <div class="ratio-bar-container">
+      <div class="ratio-labels">
+        <span>VUAA <span id="dash-vuaa-pct">0</span>%</span>
+        <span>CNDX <span id="dash-cndx-pct">0</span>%</span>
+      </div>
+      <div class="ratio-bar">
+        <div class="ratio-bar-fill" id="dash-ratio-fill" style="width: 50%"></div>
+      </div>
+    </div>
+
+    <!-- Uninvested tips -->
+    <div class="card" id="tip-balance-card" style="display:none">
+      <div class="card-title">Befektetetlen borravalók</div>
+      <div class="card-value" style="color: var(--accent-orange)" id="dash-uninvested">0 Ft</div>
+      <div class="card-sub">Ezek a logolt, de még be nem fektetett borravalók</div>
+    </div>
+
+    <div class="section-header">
+      <h2>Legutóbbi bejegyzések</h2>
+      <button class="link" onclick="switchView('history')">Összes →</button>
+    </div>
+    <ul class="entry-list" id="dash-recent"></ul>
+  </main>
+
+  <!-- ===== NEW ENTRY VIEW ===== -->
+  <main id="view-add" class="view">
+    <h2 style="margin-bottom: 20px; font-size: 1.2rem;">Új bejegyzés</h2>
+
+    <!-- Source toggle -->
+    <div class="form-group">
+      <label>Típus</label>
+      <div class="toggle-group" id="source-toggle">
+        <button class="toggle-btn active" data-source="monthly">Havi befizetés</button>
+        <button class="toggle-btn" data-source="tip">Borravalóból</button>
+        <button class="toggle-btn" data-source="extra">Extra</button>
+      </div>
+    </div>
+
+    <!-- Tip week indicator (only for tip source) -->
+    <div class="week-indicator" id="tip-week-indicator" style="display:none">
+      <span>Aktuális borravaló hét:</span>
+      <span class="week-num" id="tip-week-num">1</span> / 4
+      <span class="week-ticker vuaa" id="tip-week-ticker">VUAA</span>
+    </div>
+
+    <form id="entry-form">
+      <div class="form-group">
+        <label for="entry-date">Dátum</label>
+        <input type="date" id="entry-date" required>
+      </div>
+
+      <div class="form-group">
+        <label for="entry-ticker">Ticker</label>
+        <select id="entry-ticker" required>
+          <option value="VUAA">VUAA (S&P 500)</option>
+          <option value="CNDX">CNDX (NASDAQ 100)</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="entry-huf">Összeg (HUF)</label>
+          <div class="input-with-unit">
+            <input type="number" id="entry-huf" placeholder="27000" inputmode="numeric" required>
+            <span class="unit">Ft</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="entry-eur">Összeg (EUR)</label>
+          <div class="input-with-unit">
+            <input type="number" id="entry-eur" placeholder="0.00" step="0.01" inputmode="decimal">
+            <span class="unit">€</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="entry-rate">EUR/HUF középárfolyam</label>
+        <div class="input-with-unit">
+          <input type="number" id="entry-rate" placeholder="400.00" step="0.01" inputmode="decimal">
+          <span class="unit">Ft/€</span>
+        </div>
+        <div class="rate-status loading" id="rate-status">
+          <span class="dot"></span>
+          <span id="rate-status-text">Árfolyam betöltése...</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="entry-note">Megjegyzés (opcionális)</label>
+        <textarea id="entry-note" rows="2" placeholder="Pl. havi rendszeres, borravaló hét 3..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="btn-save-entry">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Mentés
+      </button>
+    </form>
+  </main>
+
+  <!-- ===== TIPS VIEW ===== -->
+  <main id="view-tips" class="view">
+    <h2 style="margin-bottom: 6px; font-size: 1.2rem;">Borravalók</h2>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Logold az egyedi borravalókat, és kövesd a heti összesítést.</p>
+
+    <!-- Add tip form -->
+    <div class="card">
+      <div class="card-title">Új borravaló rögzítése</div>
+      <form id="tip-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="tip-date">Dátum</label>
+            <input type="date" id="tip-date" required>
+          </div>
+          <div class="form-group">
+            <label for="tip-amount">Összeg</label>
+            <div class="input-with-unit">
+              <input type="number" id="tip-amount" placeholder="5000" inputmode="numeric" required>
+              <span class="unit">Ft</span>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Borravaló rögzítése
+        </button>
+      </form>
+    </div>
+
+    <!-- Weekly summaries -->
+    <div class="section-header">
+      <h2>Heti összesítés</h2>
+    </div>
+    <div id="weekly-summaries"></div>
+
+    <!-- Individual tips -->
+    <div class="section-header">
+      <h2>Egyedi borravalók</h2>
+    </div>
+    <ul class="entry-list" id="tip-list"></ul>
+  </main>
+
+  <!-- ===== HISTORY VIEW ===== -->
+  <main id="view-history" class="view">
+    <h2 style="margin-bottom: 16px; font-size: 1.2rem;">Előzmények</h2>
+
+    <div class="filter-bar" id="history-filters">
+      <button class="filter-chip active" data-filter="all">Mind</button>
+      <button class="filter-chip" data-filter="VUAA">VUAA</button>
+      <button class="filter-chip" data-filter="CNDX">CNDX</button>
+      <button class="filter-chip" data-filter="monthly">Havi</button>
+      <button class="filter-chip" data-filter="tip">Borravaló</button>
+    </div>
+
+    <ul class="entry-list" id="history-list"></ul>
+    <div class="empty-state" id="history-empty" style="display:none">
+      <div class="empty-icon">📊</div>
+      <p>Még nincs bejegyzés.<br>Adj hozzá egyet a + gombbal!</p>
+    </div>
+  </main>
+
+  <!-- ===== SETTINGS VIEW ===== -->
+  <main id="view-settings" class="view">
+    <h2 style="margin-bottom: 20px; font-size: 1.2rem;">Beállítások</h2>
+
+    <div class="settings-item" onclick="exportData()">
+      <div>
+        <div class="settings-label">📥 Adatok exportálása (JSON)</div>
+        <div class="settings-desc">Mentsd el az összes adatot biztonsági másolatként</div>
+      </div>
+      <span class="settings-arrow">›</span>
+    </div>
+
+    <div class="settings-item" onclick="exportCSV()">
+      <div>
+        <div class="settings-label">📊 CSV exportálás</div>
+        <div class="settings-desc">Excel-kompatibilis formátum</div>
+      </div>
+      <span class="settings-arrow">›</span>
+    </div>
+
+    <div class="settings-item" onclick="document.getElementById('import-file').click()">
+      <div>
+        <div class="settings-label">📤 Adatok importálása</div>
+        <div class="settings-desc">Visszaállítás JSON fájlból</div>
+      </div>
+      <span class="settings-arrow">›</span>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none">
+
+    <div class="settings-item" onclick="confirmClearData()" style="border-color: rgba(255,82,82,0.2)">
+      <div>
+        <div class="settings-label" style="color: var(--accent-red)">🗑️ Összes adat törlése</div>
+        <div class="settings-desc">Minden bejegyzés és borravaló véglegesen törlődik</div>
+      </div>
+      <span class="settings-arrow" style="color: var(--accent-red)">›</span>
+    </div>
+
+    <div style="text-align:center; margin-top: 40px; color: var(--text-muted); font-size: 0.75rem;">
+      Befektetés Tracker v1.0<br>
+      Adatok helyben tárolva (localStorage)
+    </div>
+  </main>
+
+  <!-- ===== DETAIL MODAL ===== -->
+  <div class="modal-overlay" id="entry-modal">
+    <div class="modal-content">
+      <div class="modal-handle"></div>
+      <div class="modal-title" id="modal-title">Bejegyzés részletei</div>
+      <div id="modal-body"></div>
+      <div class="btn-group">
+        <button class="btn btn-secondary btn-small" onclick="closeModal()">Bezárás</button>
+        <button class="btn btn-danger btn-small" id="modal-delete-btn">Törlés</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BOTTOM NAVIGATION ===== -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-view="dashboard" id="nav-dashboard">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Főoldal</span>
+    </button>
+    <button class="nav-item" data-view="add" id="nav-add">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+      <span>Új bejegyzés</span>
+    </button>
+    <button class="nav-item" data-view="tips" id="nav-tips">
+      <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <span>Borravalók</span>
+    </button>
+    <button class="nav-item" data-view="history" id="nav-history">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Előzmények</span>
+    </button>
+    <button class="nav-item" data-view="settings" id="nav-settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>Beállítások</span>
+    </button>
+  </nav>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
