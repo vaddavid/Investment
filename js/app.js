@@ -524,9 +524,9 @@ function setMarketCurrency(currency) {
 function renderMarketCharts() {
   const isHuf = marketCurrency === 'HUF';
   
-  // XETR (Xetra) is in EUR. TradingView can multiply it by EURHUF inline
-  const vuaaSymbol = isHuf ? 'XETR:VUAA*FX_IDC:EURHUF' : 'XETR:VUAA';
-  const cndxSymbol = isHuf ? 'XETR:CNDX*FX_IDC:EURHUF' : 'XETR:CNDX';
+  // XETR/MIL is in EUR. TradingView can multiply it by EURHUF inline
+  const vuaaSymbol = isHuf ? 'MIL:VUAA*FX_IDC:EURHUF' : 'MIL:VUAA';
+  const cndxSymbol = isHuf ? 'MIL:CSNDX*FX_IDC:EURHUF' : 'MIL:CSNDX';
   const eurhufSymbol = 'FX_IDC:EURHUF';
 
   createTvWidget('tv-chart-vuaa', vuaaSymbol);

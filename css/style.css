@@ -721,7 +721,8 @@ body::before {
   background: var(--bg-glass);
 }
 
-.tv-chart-container iframe {
+.tv-chart-container iframe,
+.tv-chart-container > div {
   border: none;
   width: 100%;
   height: 100%;
