@@ -5,6 +5,14 @@ let currentFilter = 'all';
 let currentRate = null;
 let editingEntryId = null;
 
+/**
+ * Parse decimal input - handles both comma and dot as decimal separator
+ */
+function parseDecimal(value) {
+  if (!value) return NaN;
+  return parseFloat(String(value).replace(',', '.'));
+}
+
 // ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
@@ -72,9 +80,9 @@ async function loadRate(dateStr) {
   const rate = await fetchEurHufRate(dateStr);
   if (rate) {
     currentRate = rate;
-    rateInput.value = rate.toFixed(2);
+    rateInput.value = rate.toFixed(2).replace('.', ',');
     statusEl.className = 'rate-status';
-    statusText.textContent = `Aktuális: ${rate.toFixed(2)} Ft/€`;
+    statusText.textContent = `Aktuális: ${rate.toFixed(2).replace('.', ',')} Ft/€`;
     recalcEur();
   } else {
     statusEl.className = 'rate-status error';
@@ -134,8 +142,8 @@ function initEntryForm() {
 
   // Auto-calc HUF when EUR changes
   eurInput.addEventListener('input', () => {
-    const eur = parseFloat(eurInput.value);
-    const rate = parseFloat(rateInput.value);
+    const eur = parseDecimal(eurInput.value);
+    const rate = parseDecimal(rateInput.value);
     if (eur && rate) {
       hufInput.value = Math.round(eurToHuf(eur, rate));
     }
@@ -154,10 +162,10 @@ function initEntryForm() {
 }
 
 function recalcEur() {
-  const huf = parseFloat(document.getElementById('entry-huf').value);
-  const rate = parseFloat(document.getElementById('entry-rate').value);
+  const huf = parseDecimal(document.getElementById('entry-huf').value);
+  const rate = parseDecimal(document.getElementById('entry-rate').value);
   if (huf && rate) {
-    document.getElementById('entry-eur').value = hufToEur(huf, rate).toFixed(2);
+    document.getElementById('entry-eur').value = hufToEur(huf, rate).toFixed(2).replace('.', ',');
   }
 }
 
@@ -166,8 +174,8 @@ function saveEntry() {
     date: document.getElementById('entry-date').value,
     ticker: document.getElementById('entry-ticker').value,
     amountHUF: parseInt(document.getElementById('entry-huf').value) || 0,
-    amountEUR: parseFloat(document.getElementById('entry-eur').value) || 0,
-    eurHufRate: parseFloat(document.getElementById('entry-rate').value) || 0,
+    amountEUR: parseDecimal(document.getElementById('entry-eur').value) || 0,
+    eurHufRate: parseDecimal(document.getElementById('entry-rate').value) || 0,
     source: getSelectedSource(),
     note: document.getElementById('entry-note').value.trim()
   };
@@ -177,8 +185,15 @@ function saveEntry() {
     return;
   }
 
-  addEntry(entry);
-  showToast('Bejegyzés mentve! ✓');
+  if (editingEntryId) {
+    updateEntry(editingEntryId, entry);
+    editingEntryId = null;
+    document.getElementById('btn-save-entry').innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Mentés';
+    showToast('Bejegyzés frissítve! ✓');
+  } else {
+    addEntry(entry);
+    showToast('Bejegyzés mentve! ✓');
+  }
 
   // Reset form
   document.getElementById('entry-huf').value = '';
@@ -449,7 +464,38 @@ function showEntryDetail(id) {
     }
   };
 
+  document.getElementById('modal-edit-btn').onclick = () => {
+    editEntry(entry);
+  };
+
   modal.classList.add('active');
+}
+
+function editEntry(entry) {
+  closeModal();
+  editingEntryId = entry.id;
+
+  // Switch to add view
+  switchView('add');
+
+  // Fill form with entry data
+  document.getElementById('entry-date').value = entry.date;
+  document.getElementById('entry-ticker').value = entry.ticker;
+  document.getElementById('entry-huf').value = entry.amountHUF;
+  document.getElementById('entry-eur').value = (entry.amountEUR || 0).toFixed(2).replace('.', ',');
+  document.getElementById('entry-rate').value = (entry.eurHufRate || 0).toFixed(2).replace('.', ',');
+  document.getElementById('entry-note').value = entry.note || '';
+
+  // Set source toggle
+  document.querySelectorAll('#source-toggle .toggle-btn').forEach(b => {
+    b.classList.remove('active');
+    if (b.dataset.source === entry.source) b.classList.add('active');
+  });
+
+  // Change button text
+  document.getElementById('btn-save-entry').innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Frissítés';
+
+  updateTipWeekIndicator();
 }
 
 function closeModal() {
