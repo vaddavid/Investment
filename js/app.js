@@ -545,7 +545,7 @@ function createTvWidget(containerId, symbol) {
   
   if (!window.TradingView) {
     const script = document.createElement('script');
-    script.src = 'https://s.tradingview.com/tv.js';
+    script.src = 'https://s3.tradingview.com/tv.js';
     script.async = true;
     script.onload = () => initWidget(containerId, symbol);
     document.head.appendChild(script);
