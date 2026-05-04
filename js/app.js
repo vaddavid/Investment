@@ -4,6 +4,8 @@ let currentView = 'dashboard';
 let currentFilter = 'all';
 let currentRate = null;
 let editingEntryId = null;
+let marketCurrency = 'EUR';
+let marketChartsLoaded = false;
 
 /**
  * Parse decimal input - handles both comma and dot as decimal separator
@@ -59,6 +61,12 @@ function switchView(view) {
   if (view === 'history') refreshHistory();
   if (view === 'tips') refreshTips();
   if (view === 'add') updateTipWeekIndicator();
+  if (view === 'market') {
+    if (!marketChartsLoaded) {
+      marketChartsLoaded = true;
+      renderMarketCharts();
+    }
+  }
 }
 
 // ===== DEFAULT DATES =====
@@ -501,6 +509,68 @@ function editEntry(entry) {
 function closeModal() {
   document.getElementById('entry-modal').classList.remove('active');
   editingEntryId = null;
+}
+
+// ===== MARKET VIEW =====
+function setMarketCurrency(currency) {
+  marketCurrency = currency;
+  document.querySelectorAll('.market-currency-btn').forEach(btn => {
+    btn.classList.remove('active');
+    if (btn.dataset.currency === currency) btn.classList.add('active');
+  });
+  renderMarketCharts();
+}
+
+function renderMarketCharts() {
+  const isHuf = marketCurrency === 'HUF';
+  
+  // XETR (Xetra) is in EUR. TradingView can multiply it by EURHUF inline
+  const vuaaSymbol = isHuf ? 'XETR:VUAA*FX_IDC:EURHUF' : 'XETR:VUAA';
+  const cndxSymbol = isHuf ? 'XETR:CNDX*FX_IDC:EURHUF' : 'XETR:CNDX';
+  const eurhufSymbol = 'FX_IDC:EURHUF';
+
+  createTvWidget('tv-chart-vuaa', vuaaSymbol);
+  createTvWidget('tv-chart-cndx', cndxSymbol);
+  createTvWidget('tv-chart-eurhuf', eurhufSymbol);
+
+  // Hide the text prices since the chart provides the exact price
+  document.getElementById('vuaa-price').style.display = 'none';
+  document.getElementById('cndx-price').style.display = 'none';
+  document.getElementById('eurhuf-price').style.display = 'none';
+}
+
+function createTvWidget(containerId, symbol) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  
+  if (!window.TradingView) {
+    const script = document.createElement('script');
+    script.src = 'https://s.tradingview.com/tv.js';
+    script.async = true;
+    script.onload = () => initWidget(containerId, symbol);
+    document.head.appendChild(script);
+  } else {
+    initWidget(containerId, symbol);
+  }
+}
+
+function initWidget(containerId, symbol) {
+  new TradingView.widget({
+    "autosize": true,
+    "symbol": symbol,
+    "interval": "D",
+    "timezone": "Europe/Budapest",
+    "theme": "dark",
+    "style": "3", // Area chart
+    "locale": "hu_HU",
+    "enable_publishing": false,
+    "backgroundColor": "rgba(26, 34, 64, 0)", // transparent to match card
+    "gridColor": "rgba(255, 255, 255, 0.05)",
+    "hide_top_toolbar": true,
+    "hide_legend": false,
+    "save_image": false,
+    "container_id": containerId
+  });
 }
 
 // Close modal on overlay click

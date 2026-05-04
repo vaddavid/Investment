@@ -209,6 +209,59 @@
     </div>
   </main>
 
+  <!-- ===== MARKET VIEW ===== -->
+  <main id="view-market" class="view">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2 style="font-size: 1.2rem;">Piac</h2>
+      <div class="toggle-group" style="width: auto;">
+        <button class="toggle-btn active market-currency-btn" data-currency="EUR" onclick="setMarketCurrency('EUR')">EUR</button>
+        <button class="toggle-btn market-currency-btn" data-currency="HUF" onclick="setMarketCurrency('HUF')">HUF</button>
+      </div>
+    </div>
+
+    <!-- VUAA Card -->
+    <div class="card" style="padding: 12px; margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div>
+          <span style="font-weight: 700; color: var(--accent-green); font-size: 1rem;">VUAA</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 6px;">S&P 500</span>
+        </div>
+        <div id="vuaa-price" style="font-weight: 700; font-size: 1rem;">Betöltés...</div>
+      </div>
+      <div class="tv-chart-container">
+        <div id="tv-chart-vuaa"></div>
+      </div>
+    </div>
+
+    <!-- CNDX Card -->
+    <div class="card" style="padding: 12px; margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div>
+          <span style="font-weight: 700; color: var(--accent-blue); font-size: 1rem;">CNDX</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 6px;">NASDAQ 100</span>
+        </div>
+        <div id="cndx-price" style="font-weight: 700; font-size: 1rem;">Betöltés...</div>
+      </div>
+      <div class="tv-chart-container">
+        <div id="tv-chart-cndx"></div>
+      </div>
+    </div>
+
+    <!-- EUR/HUF -->
+    <div class="card" style="padding: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <div>
+          <span style="font-weight: 700; color: var(--accent-orange); font-size: 1rem;">EUR/HUF</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 6px;">Árfolyam</span>
+        </div>
+        <div id="eurhuf-price" style="font-weight: 700; font-size: 1rem;">Betöltés...</div>
+      </div>
+      <div class="tv-chart-container">
+        <div id="tv-chart-eurhuf"></div>
+      </div>
+    </div>
+  </main>
+
   <!-- ===== SETTINGS VIEW ===== -->
   <main id="view-settings" class="view">
     <h2 style="margin-bottom: 20px; font-size: 1.2rem;">Beállítások</h2>
@@ -272,9 +325,13 @@
       <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       <span>Főoldal</span>
     </button>
+    <button class="nav-item" data-view="market" id="nav-market">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Piac</span>
+    </button>
     <button class="nav-item" data-view="add" id="nav-add">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-      <span>Új bejegyzés</span>
+      <span>Új</span>
     </button>
     <button class="nav-item" data-view="tips" id="nav-tips">
       <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
@@ -282,11 +339,11 @@
     </button>
     <button class="nav-item" data-view="history" id="nav-history">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span>Előzmények</span>
+      <span>Lista</span>
     </button>
     <button class="nav-item" data-view="settings" id="nav-settings">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-      <span>Beállítások</span>
+      <span>⚙</span>
     </button>
   </nav>
 
